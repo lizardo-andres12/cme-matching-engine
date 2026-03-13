@@ -40,6 +40,6 @@
 # debug information files
 *.dwo
 
-# lib (install through script)
-./lib/*
-./build/*
+build/*
+lib/*
+.cache/*
