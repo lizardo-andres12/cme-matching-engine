@@ -1,7 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <type_traits>
+
+#include "core/order_concept.hpp"
 
 namespace aux::containers {
 
@@ -13,7 +14,8 @@ namespace aux::containers {
      * pointers so that O(1) removal is possible without a secondary lookup.
      *
      * Assumptions & Constraints:
-     *   - T must be nothrow-move-constructible and nothrow-default-constructible.
+     *   - T must be completely nothrow constructible. This is to enforce the restriction that
+     *     only non resource-owning types (POD types) are used within the container.
      *   - Copy construction and copy assignment are disabled.
      *   - A moved-from queue is left in a valid but empty (head_ptr_ == nullptr) state;
      *     the only safe operations on it afterwards are destruction and assignment.
@@ -22,21 +24,20 @@ namespace aux::containers {
      *   - Stateful allocators not supported. The allocator is rebound internally to 
      *     allocate Node objects and is reconstructed on each operation.
      */
-    template <typename T, typename Allocator = std::allocator<T>>
-    requires std::is_nothrow_move_constructible_v<T> && std::is_nothrow_default_constructible_v<T>
+    template <core::IsOrder T, typename Allocator = std::allocator<T>>
     class price_queue {
     public:
-	struct Node {
+	struct node {
 	    T data;
-	    Node* next;
-	    Node* prev;
+	    node* next;
+	    node* prev;
 
-	    Node() : Node(nullptr, nullptr, nullptr) {}
-	    Node(T data_, Node* next_, Node* prev_) : data(std::move(data_)), next(next_), prev(prev_) {}
+	    node() : node(nullptr, nullptr, nullptr) {}
+	    node(T data_, node* next_, node* prev_) : data(std::move(data_)), next(next_), prev(prev_) {}
 	};
 
-	using node_pointer_t = Node*;
-	using node_allocator_t = std::allocator_traits<Allocator>::template rebind_alloc<Node>;
+	using node_pointer_t = node*;
+	using node_allocator_t = std::allocator_traits<Allocator>::template rebind_alloc<node>;
 
 	/** Constructs an empty queue, allocating the two sentinel nodes (head / tail). */
 	price_queue() noexcept {
@@ -139,14 +140,15 @@ namespace aux::containers {
 	}
 
 	/**
-         * Returns a copy of the front element, or a default-constructed T if empty.
+         * Sets result to a reference to the front element, or a default-constructed T if empty.
          * Does not remove the element.
          */
-	T front() const noexcept {
+	void front(T& result) const noexcept {
 	    if (size_ == 0) [[unlikely]] {
-		return T{};
+		result = T{};
+		return;
 	    }
-	    return head_ptr_->next->data;
+	    result = head_ptr_->next->data;
 	}
 
 	/** Returns the number of data nodes (sentinels not counted). */
