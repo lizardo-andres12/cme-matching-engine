@@ -161,6 +161,8 @@ namespace aux::containers {
 	node_pointer_t tail_ptr_{ nullptr };
 	size_t size_{ 0 };
 
+	// TODO: Construct allocator once and reuse.
+
 	/**
          * Core move helper shared by the move constructor and move assignment operator.
          *
