@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <utility>
 
 #include "types.hpp"
@@ -22,10 +23,18 @@ namespace aux::core {
 	price_t price_; // Price mantissa, multiplied by instrument_metadata.price_exponent;
 	quantity_t quantity_; // Tag 38
 	Side side_;
-	uint64_t timestamp; // Internally set
+	uint64_t timestamp_; // Internally set
 
 	id_t id() const noexcept {
 	    return order_id_;
+	}
+
+	id_t priority() const noexcept {
+	    return priority_id_;
+	}
+
+	void set_priority(id_t priority) noexcept {
+	    priority_id_ = priority;
 	}
 
 	Side side() const noexcept {
@@ -36,8 +45,20 @@ namespace aux::core {
 	    return price_;
 	}
 
+	quantity_t quantity() const noexcept {
+	    return quantity_;
+	}
+
+	void set_quantity(quantity_t qty) noexcept {
+	    quantity_ = qty;
+	}
+
+	uint64_t timestamp() const noexcept {
+	    return timestamp_;
+	}
+
 	void set_timestamp(uint64_t ts) noexcept {
-	    timestamp = ts;
+	    timestamp_ = ts;
 	}
 
 	quantity_t fill(quantity_t fill_qty) noexcept {
@@ -108,12 +129,32 @@ namespace aux::core {
 	    return order_inst.id();
 	}
 
+	id_t priority() const noexcept {
+	    return order_inst.priority();
+	}
+
+	void set_priority(id_t priority) noexcept {
+	    order_inst.set_priority(priority);
+	}
+
 	Side side() const noexcept {
 	    return order_inst.side();
 	}
 
 	price_t price() const noexcept {
 	    return order_inst.price();
+	}
+
+	quantity_t quantity() const noexcept {
+	    return order_inst.quantity();
+	}
+
+	void set_quantity(quantity_t qty) noexcept {
+	    order_inst.set_quantity(qty);
+	}
+
+	uint64_t timestamp() const noexcept {
+	    return order_inst.timestamp();
 	}
 
 	void set_timestamp(uint64_t ts) noexcept {
