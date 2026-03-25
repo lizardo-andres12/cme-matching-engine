@@ -41,12 +41,11 @@ namespace aux::containers {
     public:
 	/** Stable reference types for O(1) cancel/modify */
 	/** TODO: change to stable iterator defined behind an interface to allow for different price level data structure impls */
-	using node_t = price_queue<T, Allocator>::node;
-	using node_ptr_t = price_queue<T, Allocator>::node_pointer_t;
+	using order_iterator_t = price_queue<T, Allocator>::iterator;
 
 	/** Value type aliases to shorten map-related allocator rebinding */
 	using book_value_t = std::pair<const price_t, price_queue<T, Allocator>>;
-	using map_value_t = std::pair<const id_t, node_ptr_t>;
+	using map_value_t = std::pair<const id_t, order_iterator_t>;
 
 	/** Allocators rebound to the concrete pair types stored internally in maps */
 	using book_alloc_t = typename std::allocator_traits<Allocator>::template rebind_alloc<book_value_t>;
@@ -54,7 +53,7 @@ namespace aux::containers {
 
 	/** Final composite types */
 	using book_t = std::map<price_t, price_queue<T, Allocator>, std::less<price_t>, book_alloc_t>;
-	using order_map_t = std::unordered_map<id_t, node_ptr_t, std::hash<id_t>, std::equal_to<id_t>, map_alloc_t>;
+	using order_map_t = std::unordered_map<id_t, order_iterator_t, std::hash<id_t>, std::equal_to<id_t>, map_alloc_t>;
 	using flat_book_array_t = std::array<book_t, 2>;
 
 	/** Default constructor leaves security_id zero-initialized */
@@ -106,8 +105,8 @@ namespace aux::containers {
 
 	    set_timestamp(order);
 
-	    const node_ptr_t order_ptr = price_level_it->second.enqueue(std::move(order));
-	    order_map_.emplace(order.id(), order_ptr);
+	    const order_iterator_t it = price_level_it->second.enqueue(std::move(order));
+	    order_map_.emplace(order.id(), it);
 	}
 
 	/**
@@ -124,13 +123,13 @@ namespace aux::containers {
 		throw std::invalid_argument("Cannot cancel order that has not been added, id: " + std::to_string(id));
 	    }
 
-	    node_ptr_t order_ptr = order_map_it->second;
-	    T& order = order_ptr->data;
+	    order_iterator_t it = order_map_it->second;
+	    T& order = it->data;
 	    auto& book = books_[side_to_uint8(order.side())];
 
 	    auto price_level_it = book.find(order.price());
 	    price_queue<T, Allocator>& pq = price_level_it->second;
-	    pq.remove(order_ptr);
+	    pq.remove(it);
 	    if (pq.size() == 0) { 
 		book.erase(price_level_it);
 	    }
@@ -152,8 +151,8 @@ namespace aux::containers {
 		throw std::invalid_argument("Cannot update order that has not been added, id: " + std::to_string(id));
 	    }
 
-	    node_ptr_t order_ptr = order_map_it->second;
-	    T order = std::move(order_ptr->data);
+	    order_iterator_t it = order_map_it->second;
+	    T order = std::move(it->data);
 	    order.set_quantity(qty);
 	    order.set_priority(priority);
 	    set_timestamp(order);
@@ -163,7 +162,7 @@ namespace aux::containers {
 	    auto& pq = price_level_it->second;
 
 	    // TODO: Write a move_to_back() method that does not deallocate or allocate new object
-	    pq.remove(order_ptr);
+	    pq.remove(it);
 	    order_map_it->second = pq.enqueue(std::move(order));
 	}
 

@@ -168,10 +168,9 @@ namespace aux::containers {
 	 * Appends a new node at the back of the queue.
 	 *
 	 * @param the value to store; moved into the new node.
-	 * @return A pointer to the newly allocated node. Remains valid until
-	 *         remove() is called on it or the queue is moved/destroyed.
+	 * @return A stable iterator to the enqueued item in the node.
 	 */
-	node_pointer_t enqueue(T data) {
+	iterator enqueue(T data) {
 	    node_allocator_t alloc{ Allocator{} };
 	    node_pointer_t prev_last_node = tail_ptr_->prev;
 
@@ -182,7 +181,7 @@ namespace aux::containers {
 	    prev_last_node->next = node_ptr;
 	    ++size_;
 
-	    return node_ptr;
+	    return iterator{ node_ptr };
 	}
 
 	/**
@@ -191,13 +190,15 @@ namespace aux::containers {
 	 * @param node_ptr A pointer to a live node belonging to this queue.
 	 *                 The pointer is invalid after this call.
 	 */
-	void remove(node_pointer_t node_ptr) noexcept {
+	void remove(iterator it) noexcept {
 	    node_allocator_t alloc{ Allocator{} };
-	    node_pointer_t prev_node = node_ptr->prev;
-	    node_pointer_t next_node = node_ptr->next;
 
-	    std::destroy_at(node_ptr);
-	    alloc.deallocate(node_ptr, 1);
+	    node& node = *it;
+	    node_pointer_t prev_node = node.prev;
+	    node_pointer_t next_node = node.next;
+
+	    std::destroy_at(&node);
+	    alloc.deallocate(&node, 1);
 
 	    prev_node->next = next_node;
 	    next_node->prev = prev_node;

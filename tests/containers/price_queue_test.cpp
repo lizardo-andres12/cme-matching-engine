@@ -38,19 +38,19 @@ TEST_F(PriceQueueTest, EnqueueAndLinkage) {
 
     ASSERT_NE(node1, nullptr);
     ASSERT_NE(node2, nullptr);
-    
+
     // Verify Double Linkage via public Node struct 
     EXPECT_EQ(node1->data.id(), 1);
     EXPECT_EQ(node2->data.id(), 2);
-    EXPECT_EQ(node1->next, node2);
-    EXPECT_EQ(node2->prev, node1);
+    EXPECT_EQ(node1->next, std::addressof(*node2));
+    EXPECT_EQ(node2->prev, std::addressof(*node1));
 }
 
 TEST_F(PriceQueueTest, RemoveMiddleNode) {
     price_queue<stub_order> pq;
-    auto* first = pq.enqueue(stub_order(order{1}));
-    auto* mid = pq.enqueue(stub_order(order{2}));
-    auto* last = pq.enqueue(stub_order(order{3}));
+    auto first = pq.enqueue(stub_order(order{1}));
+    auto mid = pq.enqueue(stub_order(order{2}));
+    auto last = pq.enqueue(stub_order(order{3}));
     EXPECT_EQ(stub_order::active_instances, 5);
 
     pq.remove(mid);
@@ -58,8 +58,8 @@ TEST_F(PriceQueueTest, RemoveMiddleNode) {
     // Verify Double Linkage via public Node struct 
     EXPECT_EQ(first->data.id(), 1);
     EXPECT_EQ(last->data.id(), 3);
-    EXPECT_EQ(first->next, last);
-    EXPECT_EQ(last->prev, first);
+    EXPECT_EQ(first->next, std::addressof(*last));
+    EXPECT_EQ(last->prev, std::addressof(*first));
     EXPECT_EQ(pq.size(), 2);
     EXPECT_EQ(stub_order::active_instances, 4);
 }
