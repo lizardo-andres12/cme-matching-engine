@@ -48,11 +48,11 @@ namespace aux::containers {
 	    using pointer = value_type*;
 	    using reference = value_type&;
 
-	    iterator(pointer ptr, size_t idx) noexcept : ptr_(ptr), idx_(idx) {}
+	    iterator(pointer ptr) noexcept : ptr_(ptr) {}
 
-	    iterator(const iterator& other) noexcept : ptr_(other.ptr_), idx_(other.idx_) {}
+	    iterator(const iterator& other) noexcept : ptr_(other.ptr_) {}
 
-	    iterator(iterator&& other) noexcept : ptr_(other.ptr_), idx_(other.idx_) {}
+	    iterator(iterator&& other) noexcept : ptr_(other.ptr_) {}
 
 	    iterator& operator=(const iterator& other) noexcept {
 		if (this == &other) {
@@ -60,7 +60,6 @@ namespace aux::containers {
 		}
 
 		ptr_ = other.ptr_;
-		idx_ = other.idx_;
 		return *this;
 	    }
 
@@ -70,7 +69,6 @@ namespace aux::containers {
 		}
 
 		ptr_ = other.ptr_;
-		idx_ = other.idx_;
 		return *this;
 	    }
 
@@ -103,7 +101,6 @@ namespace aux::containers {
 
 	private:
 	    pointer ptr_;
-	    size_t idx_;
 	};
 
 
@@ -217,6 +214,14 @@ namespace aux::containers {
 		return;
 	    }
 	    result = head_ptr_->next->data;
+	}
+
+	iterator begin() const noexcept {
+	    return iterator{ head_ptr_->next };
+	}
+
+	iterator end() const noexcept {
+	    return iterator{ tail_ptr_ };
 	}
 
 	/** Returns the number of data nodes (sentinels not counted). */

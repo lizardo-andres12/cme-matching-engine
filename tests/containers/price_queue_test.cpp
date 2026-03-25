@@ -152,7 +152,7 @@ TEST_F(PriceQueueTest, PriceQueueIterator) {
 
     {
 	stub_order first{ order{1} };
-	pqit it{ pq.enqueue(std::move(first)), static_cast<size_t>(0) };
+	pqit it{ pq.enqueue(std::move(first)) };
 
 	EXPECT_EQ(static_cast<aux::id_t>(1), (*it).data.id());
     }
@@ -162,9 +162,38 @@ TEST_F(PriceQueueTest, PriceQueueIterator) {
 
     {
 	stub_order second{ order{2} };
-	pqit it{ pq.enqueue(std::move(second)), static_cast<size_t>(2) };
+	pqit it{ pq.enqueue(std::move(second)) };
 
 	EXPECT_EQ(static_cast<aux::id_t>(2), (*it).data.id());
+    }
+}
+
+TEST_F(PriceQueueTest, PriceQueueBeginEnd) {
+    price_queue<stub_order> pq;
+    auto it = pq.begin();
+
+    EXPECT_EQ(pq.end(), it);
+
+    {
+	stub_order o{ order{1} };
+	pq.enqueue(std::move(o));
+    }
+
+    EXPECT_EQ(stub_order::active_instances, 3);
+    EXPECT_EQ(pq.size(), 1);
+    EXPECT_NE(pq.begin(), pq.end());
+
+    EXPECT_EQ(pq.begin()->data.id(), 1);
+
+    {
+	for (aux::id_t i{2}; i <= 4; ++i) {
+	    pq.enqueue(stub_order{ order{i} });
+	}
+
+	aux::id_t i{0};
+	for (auto& val : pq) {
+	    EXPECT_EQ(val.data.id(), ++i);
+	}
     }
 }
 
