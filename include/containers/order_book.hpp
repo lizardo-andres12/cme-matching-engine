@@ -16,6 +16,7 @@
 
 using namespace aux::core;
 
+// TODO: update price-level container to be passed in as template parameter and create price-level container concept
 namespace aux::containers {
 
     /**
@@ -40,7 +41,6 @@ namespace aux::containers {
     class order_book {
     public:
 	/** Stable reference types for O(1) cancel/modify */
-	/** TODO: change to stable iterator defined behind an interface to allow for different price level data structure impls */
 	using order_iterator_t = price_queue<T, Allocator>::iterator;
 
 	/** Value type aliases to shorten map-related allocator rebinding */
