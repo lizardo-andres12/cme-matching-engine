@@ -2,6 +2,7 @@
 
 #include "containers/price_queue.hpp"
 #include "core/order_types.hpp"
+#include "types.hpp"
 
 using namespace aux::containers;
 using namespace aux::core;
@@ -144,3 +145,26 @@ TEST_F(PriceQueueTest, MoveConstructionSentinelDeletionSafety) {
 						       // shouldn't make any new elements
     EXPECT_EQ(stub_order::active_instances, 2); // no change
 }
+
+TEST_F(PriceQueueTest, PriceQueueIterator) {
+    price_queue<stub_order> pq;
+    using pqit = price_queue<stub_order>::iterator;
+
+    {
+	stub_order first{ order{1} };
+	pqit it{ pq.enqueue(std::move(first)), static_cast<size_t>(0) };
+
+	EXPECT_EQ(static_cast<aux::id_t>(1), (*it).data.id());
+    }
+
+    EXPECT_EQ(pq.size(), 1);
+    EXPECT_EQ(stub_order::active_instances, 3);
+
+    {
+	stub_order second{ order{2} };
+	pqit it{ pq.enqueue(std::move(second)), static_cast<size_t>(2) };
+
+	EXPECT_EQ(static_cast<aux::id_t>(2), (*it).data.id());
+    }
+}
+

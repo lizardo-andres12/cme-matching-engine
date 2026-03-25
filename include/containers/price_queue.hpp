@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 
 #include "core/order_concept.hpp"
@@ -39,6 +40,73 @@ namespace aux::containers {
 	using node_pointer_t = node*;
 	using node_allocator_t = std::allocator_traits<Allocator>::template rebind_alloc<node>;
 
+	class iterator {
+	public:
+	    using iterator_category = std::forward_iterator_tag;
+	    using difference_type = std::ptrdiff_t;
+	    using value_type = node;
+	    using pointer = value_type*;
+	    using reference = value_type&;
+
+	    iterator(pointer ptr, size_t idx) noexcept : ptr_(ptr), idx_(idx) {}
+
+	    iterator(const iterator& other) noexcept : ptr_(other.ptr_), idx_(other.idx_) {}
+
+	    iterator(iterator&& other) noexcept : ptr_(other.ptr_), idx_(other.idx_) {}
+
+	    iterator& operator=(const iterator& other) noexcept {
+		if (this == &other) {
+		    return *this;
+		}
+
+		ptr_ = other.ptr_;
+		idx_ = other.idx_;
+		return *this;
+	    }
+
+	    iterator& operator=(iterator&& other) noexcept {
+		if (this == &other) {
+		    return *this;
+		}
+
+		ptr_ = other.ptr_;
+		idx_ = other.idx_;
+		return *this;
+	    }
+
+	    reference operator*() const noexcept {
+		return *ptr_;
+	    }
+
+	    pointer operator->() const noexcept {
+		return ptr_;
+	    }
+
+	    iterator& operator++() noexcept {
+		ptr_ = ptr_->next;
+		return *this;
+	    }
+
+	    iterator operator++(int) noexcept {
+		iterator tmp = *this;
+		ptr_ = ptr_->next;
+		return tmp;
+	    }
+
+	    bool operator==(const iterator& other) const noexcept {
+		return ptr_ == other.ptr_;
+	    }
+
+	    bool operator!=(const iterator& other) const noexcept {
+		return !(*this == other);
+	    }
+
+	private:
+	    pointer ptr_;
+	    size_t idx_;
+	};
+
+
 	/** Constructs an empty queue, allocating the two sentinel nodes (head / tail). */
 	price_queue() noexcept {
 	    node_allocator_t alloc{ Allocator{} };
@@ -71,9 +139,9 @@ namespace aux::containers {
 	}
 
 	/**
-         * Destroys all data nodes and the two sentinel nodes.
-         * A moved-from queue (head_ptr_ == nullptr) is handled safely with an early return.
-         */
+	 * Destroys all data nodes and the two sentinel nodes.
+	 * A moved-from queue (head_ptr_ == nullptr) is handled safely with an early return.
+	 */
 	~price_queue() {
 	    if (head_ptr_ == nullptr) return;
 
@@ -100,12 +168,12 @@ namespace aux::containers {
 	price_queue& operator=(price_queue& other) = delete;
 
 	/**
-         * Appends a new node at the back of the queue.
-         *
-         * @param the value to store; moved into the new node.
-         * @return A pointer to the newly allocated node. Remains valid until
-         *         remove() is called on it or the queue is moved/destroyed.
-         */
+	 * Appends a new node at the back of the queue.
+	 *
+	 * @param the value to store; moved into the new node.
+	 * @return A pointer to the newly allocated node. Remains valid until
+	 *         remove() is called on it or the queue is moved/destroyed.
+	 */
 	node_pointer_t enqueue(T data) {
 	    node_allocator_t alloc{ Allocator{} };
 	    node_pointer_t prev_last_node = tail_ptr_->prev;
@@ -121,11 +189,11 @@ namespace aux::containers {
 	}
 
 	/**
-         * Removes and deallocates an arbitrary node in O(1).
-         *
-         * @param node_ptr A pointer to a live node belonging to this queue.
-         *                 The pointer is invalid after this call.
-         */
+	 * Removes and deallocates an arbitrary node in O(1).
+	 *
+	 * @param node_ptr A pointer to a live node belonging to this queue.
+	 *                 The pointer is invalid after this call.
+	 */
 	void remove(node_pointer_t node_ptr) noexcept {
 	    node_allocator_t alloc{ Allocator{} };
 	    node_pointer_t prev_node = node_ptr->prev;
@@ -140,9 +208,9 @@ namespace aux::containers {
 	}
 
 	/**
-         * Sets result to a reference to the front element, or a default-constructed T if empty.
-         * Does not remove the element.
-         */
+	 * Sets result to a reference to the front element, or a default-constructed T if empty.
+	 * Does not remove the element.
+	 */
 	void front(T& result) const noexcept {
 	    if (size_ == 0) [[unlikely]] {
 		result = T{};
@@ -164,15 +232,15 @@ namespace aux::containers {
 	// TODO: Construct allocator once and reuse.
 
 	/**
-         * Core move helper shared by the move constructor and move assignment operator.
-         *
-         * Cleans up any existing data nodes and the sentinel pair (if this queue is
-         * non-empty or was previously constructed), then steals other's pointers.
-         * Leaves other in a moved-from state (all pointers null, size zero).
-         *
-         * Assumption: when called from the move constructor, head_ptr_ is nullptr so
-         * the sentinel cleanup block is skipped via the destructor's null guard pattern.
-         */
+	 * Core move helper shared by the move constructor and move assignment operator.
+	 *
+	 * Cleans up any existing data nodes and the sentinel pair (if this queue is
+	 * non-empty or was previously constructed), then steals other's pointers.
+	 * Leaves other in a moved-from state (all pointers null, size zero).
+	 *
+	 * Assumption: when called from the move constructor, head_ptr_ is nullptr so
+	 * the sentinel cleanup block is skipped via the destructor's null guard pattern.
+	 */
 	void move_from(price_queue&& other) noexcept {
 	    if (head_ptr_ != nullptr) {
 		node_allocator_t alloc{ Allocator{}};
