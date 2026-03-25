@@ -106,8 +106,7 @@ namespace aux::containers {
 
 	/** Constructs an empty queue, allocating the two sentinel nodes (head / tail). */
 	price_queue() noexcept {
-	    node_allocator_t alloc{ Allocator{} };
-	    head_ptr_ = static_cast<node_pointer_t>(alloc.allocate(2));
+	    head_ptr_ = static_cast<node_pointer_t>(alloc_.allocate(2));
 	    tail_ptr_ = head_ptr_ + 1;
 
 	    std::construct_at(head_ptr_, T{}, tail_ptr_, nullptr);
@@ -142,14 +141,13 @@ namespace aux::containers {
 	~price_queue() {
 	    if (head_ptr_ == nullptr) return;
 
-	    node_allocator_t alloc{ Allocator{}};
 	    if (size_ > 0) {
 		node_pointer_t cur = head_ptr_->next;
 		node_pointer_t next = cur->next;
 
 		for (size_t i{}; i < size_; ++i) {
 		    std::destroy_at(cur);
-		    alloc.deallocate(cur, 1);
+		    alloc_.deallocate(cur, 1);
 
 		    cur = next;
 		    next = next->next;
@@ -158,7 +156,7 @@ namespace aux::containers {
 
 	    std::destroy_at(head_ptr_);
 	    std::destroy_at(tail_ptr_);
-	    alloc.deallocate(head_ptr_, 2);
+	    alloc_.deallocate(head_ptr_, 2);
 	}
 
 	price_queue(const price_queue& other) = delete;
@@ -171,10 +169,9 @@ namespace aux::containers {
 	 * @return A stable iterator to the enqueued item in the node.
 	 */
 	iterator enqueue(T data) {
-	    node_allocator_t alloc{ Allocator{} };
 	    node_pointer_t prev_last_node = tail_ptr_->prev;
 
-	    node_pointer_t node_ptr = alloc.allocate(1);
+	    node_pointer_t node_ptr = alloc_.allocate(1);
 	    std::construct_at(node_ptr, std::move(data), tail_ptr_, prev_last_node);
 
 	    tail_ptr_->prev = node_ptr;
@@ -191,14 +188,13 @@ namespace aux::containers {
 	 *                 The pointer is invalid after this call.
 	 */
 	void remove(iterator it) noexcept {
-	    node_allocator_t alloc{ Allocator{} };
 
 	    node& node = *it;
 	    node_pointer_t prev_node = node.prev;
 	    node_pointer_t next_node = node.next;
 
 	    std::destroy_at(&node);
-	    alloc.deallocate(&node, 1);
+	    alloc_.deallocate(&node, 1);
 
 	    prev_node->next = next_node;
 	    next_node->prev = prev_node;
@@ -231,11 +227,11 @@ namespace aux::containers {
 	}
 
     private:
+	node_allocator_t alloc_{};
+
 	node_pointer_t head_ptr_{ nullptr };
 	node_pointer_t tail_ptr_{ nullptr };
 	size_t size_{ 0 };
-
-	// TODO: Construct allocator once and reuse.
 
 	/**
 	 * Core move helper shared by the move constructor and move assignment operator.
@@ -249,14 +245,13 @@ namespace aux::containers {
 	 */
 	void move_from(price_queue&& other) noexcept {
 	    if (head_ptr_ != nullptr) {
-		node_allocator_t alloc{ Allocator{}};
 		if (size_ > 0) {
 		    node_pointer_t cur = head_ptr_->next;
 		    node_pointer_t next = cur->next;
 
 		    for (size_t i{}; i < size_; ++i) {
 			std::destroy_at(cur);
-			alloc.deallocate(cur, 1);
+			alloc_.deallocate(cur, 1);
 
 			cur = next;
 			next = next->next;
@@ -265,7 +260,7 @@ namespace aux::containers {
 
 		std::destroy_at(head_ptr_);
 		std::destroy_at(tail_ptr_);
-		alloc.deallocate(head_ptr_, 2);
+		alloc_.deallocate(head_ptr_, 2);
 	    }
 
 	    head_ptr_ = other.head_ptr_;
